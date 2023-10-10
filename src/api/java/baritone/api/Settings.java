@@ -1469,6 +1469,13 @@ public final class Settings {
     public final Setting<Boolean> elytraTermsAccepted = new Setting<>(false);
 
     /**
+     * Verbose chat logging in elytra mode
+     */
+    public final Setting<Boolean> elytraChatSpam = new Setting<>(false);
+
+    public final Setting<Double> elytraAirChunkCost = new Setting<>(1.0D);
+
+    /**
      * A map of lowercase setting field names to their respective setting
      */
     public final Map<String, Setting<?>> byLowerName;

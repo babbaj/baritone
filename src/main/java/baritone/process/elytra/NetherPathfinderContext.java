@@ -18,8 +18,14 @@
 package baritone.process.elytra;
 
 import baritone.Baritone;
+import baritone.KeepName;
+import baritone.api.BaritoneAPI;
 import baritone.api.event.events.BlockChangeEvent;
+import baritone.cache.CachedChunk;
+import baritone.cache.CachedRegion;
+import baritone.cache.CachedWorld;
 import baritone.utils.accessor.IPalettedContainer;
+import baritone.utils.pathing.PathingBlockType;
 import dev.babbaj.pathfinder.NetherPathfinder;
 import dev.babbaj.pathfinder.Octree;
 import dev.babbaj.pathfinder.PathSegment;
@@ -42,6 +48,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author Brady
  */
+@KeepName
 public final class NetherPathfinderContext {
 
     private static final BlockState AIR_BLOCK_STATE = Blocks.AIR.defaultBlockState();
@@ -55,7 +62,7 @@ public final class NetherPathfinderContext {
     private final ExecutorService executor;
 
     public NetherPathfinderContext(long seed) {
-        this.context = NetherPathfinder.newContext(seed);
+        this.context = NetherPathfinder.newContext(seed, Baritone.settings().elytraAirChunkCost.value);
         this.seed = seed;
         this.executor = Executors.newSingleThreadExecutor();
     }
@@ -234,5 +241,38 @@ public final class NetherPathfinderContext {
 
     public static boolean isSupported() {
         return NetherPathfinder.isThisSystemSupported();
+    }
+
+    @KeepName
+    public static void loadRegionFromCache(long context, int regionX, int regionZ) {
+        CachedWorld world = (CachedWorld) BaritoneAPI.getProvider().getPrimaryBaritone().getWorldProvider().getCurrentWorld().getCachedWorld();
+        world.tryLoadFromDisk(regionX, regionZ);
+        CachedRegion region = world.getRegion(regionX, regionZ);
+        if (region != null) {
+            int insertedChunks = 0;
+            for (int chunkX = 0; chunkX < 32; chunkX++) {
+                for (int chunkZ = 0; chunkZ < 32; chunkZ++) {
+                    CachedChunk chunk = region.chunks[chunkX][chunkZ];
+                    if (chunk == null) {
+                        continue;
+                    }
+                    // don't overwrite up to date data with old data
+                    if (!NetherPathfinder.hasChunkFromJava(context, chunk.x, chunk.z)) {
+                        continue;
+                    }
+                    final long nativeChunk = NetherPathfinder.getOrCreateChunk(context, chunk.x, chunk.z);
+                    Octree.setIsFromJava(nativeChunk);
+                    for (int x = 0; x < 16; x++) {
+                        for (int z = 0; z < 16; z++) {
+                            for (int y = 0; y < 128; y++) {
+                                Octree.setBlock(nativeChunk, x, y, z, chunk.getType(CachedChunk.getPositionIndex(x, y, z)) != PathingBlockType.AIR);
+                            }
+                        }
+                    }
+                    insertedChunks++;
+                }
+            }
+            System.out.println("Inserted " + insertedChunks + " chunks from baritone's cache");
+        }
     }
 }

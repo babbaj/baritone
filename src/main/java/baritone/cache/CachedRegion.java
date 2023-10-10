@@ -49,7 +49,7 @@ public final class CachedRegion implements ICachedRegion {
     /**
      * All of the chunks in this region: A 32x32 array of them.
      */
-    private final CachedChunk[][] chunks = new CachedChunk[32][32];
+    public final CachedChunk[][] chunks = new CachedChunk[32][32];
 
     /**
      * The region x coordinate

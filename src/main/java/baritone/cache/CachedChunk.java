@@ -228,7 +228,7 @@ public final class CachedChunk {
         return ChunkPacker.pathingTypeToBlock(type, dimension);
     }
 
-    private PathingBlockType getType(int index) {
+    public PathingBlockType getType(int index) {
         return PathingBlockType.fromBits(data.get(index), data.get(index + 1));
     }
 
