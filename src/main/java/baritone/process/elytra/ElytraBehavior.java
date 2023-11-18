@@ -78,6 +78,7 @@ public final class ElytraBehavior implements Helper {
     // :sunglasses:
     public final NetherPathfinderContext context;
     public final PathManager pathManager;
+    private NetherPath overridePath = null;
     private final ElytraProcess process;
 
     /**
@@ -134,6 +135,12 @@ public final class ElytraBehavior implements Helper {
         this.boi = new BlockStateOctreeInterface(context);
     }
 
+    public ElytraBehavior(Baritone baritone, ElytraProcess process, List<BetterBlockPos> overridePath) {
+        this(baritone, process, overridePath.get(overridePath.size() - 1), false);
+        this.overridePath = new NetherPath(overridePath);
+        this.pathManager.path = this.overridePath;
+    }
+
     public final class PathManager {
 
         public NetherPath path;
@@ -161,9 +168,11 @@ public final class ElytraBehavior implements Helper {
                 this.ticksNearUnchanged = 0;
             }
 
-            // Obstacles are more important than an incomplete path, handle those first.
-            this.pathfindAroundObstacles();
-            this.attemptNextSegment();
+            if (overridePath == null) {
+                // Obstacles are more important than an incomplete path, handle those first.
+                this.pathfindAroundObstacles();
+                this.attemptNextSegment();
+            }
         }
 
         public CompletableFuture<Void> pathToDestination() {
@@ -265,6 +274,9 @@ public final class ElytraBehavior implements Helper {
         }
 
         private void setPath(final UnpackedSegment segment) {
+            if (overridePath != null) {
+                throw new IllegalStateException("Tried to update path when overridePath != null");
+            }
             List<BetterBlockPos> path = segment.collect();
             if (ElytraBehavior.this.appendDestination) {
                 BlockPos dest = ElytraBehavior.this.destination;

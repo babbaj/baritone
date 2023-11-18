@@ -56,6 +56,12 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
+import java.io.BufferedInputStream;
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 
 import static baritone.api.pathing.movement.ActionCosts.COST_INF;
@@ -319,6 +325,30 @@ public class ElytraProcess extends BaritoneProcessHelper implements IBaritonePro
     @Override
     public void pathTo(BlockPos destination) {
         this.pathTo0(destination, false);
+    }
+
+    public void pathWithFile(Path file) {
+        if (ctx.player() == null || ctx.player().level().dimension() != Level.NETHER) {
+            return;
+        }
+        this.onLostControl();
+        List<BetterBlockPos> path = new ArrayList<>();
+        try (DataInputStream dis = new DataInputStream(new BufferedInputStream(Files.newInputStream(file)))) {
+            while (true) {
+                try {
+                    path.add(new BetterBlockPos(dis.readInt(), dis.readInt(), dis.readInt()));
+                } catch (EOFException ignored) {
+                    break;
+                }
+            }
+        } catch (IOException ex) {
+            logDirect(ex.toString());
+            return;
+        }
+        this.behavior = new ElytraBehavior(this.baritone, this, path);
+        if (ctx.world() != null) {
+            this.behavior.repackChunks();
+        }
     }
 
     private void pathTo0(BlockPos destination, boolean appendDestination) {

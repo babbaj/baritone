@@ -27,6 +27,7 @@ import baritone.api.command.helpers.TabCompleteHelper;
 import baritone.api.pathing.goals.Goal;
 import baritone.api.process.ICustomGoalProcess;
 import baritone.api.process.IElytraProcess;
+import baritone.process.ElytraProcess;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.network.chat.ClickEvent;
@@ -35,6 +36,7 @@ import net.minecraft.network.chat.HoverEvent;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.level.Level;
 
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Stream;
@@ -92,6 +94,11 @@ public class ElytraCommand extends Command {
             case "repack": {
                 elytra.repackChunks();
                 logDirect("Queued all loaded chunks for repacking");
+                break;
+            }
+            case "file": {
+                String file = args.getString();
+                ((ElytraProcess) elytra).pathWithFile(Paths.get(file));
                 break;
             }
             default: {
@@ -189,7 +196,7 @@ public class ElytraCommand extends Command {
     public Stream<String> tabComplete(String label, IArgConsumer args) throws CommandException {
         TabCompleteHelper helper = new TabCompleteHelper();
         if (args.hasExactlyOne()) {
-            helper.append("reset", "repack", "supported");
+            helper.append("reset", "repack", "file", "supported");
         }
         return helper.filterPrefix(args.getString()).stream();
     }
@@ -208,6 +215,7 @@ public class ElytraCommand extends Command {
                 "> elytra - fly to the current goal",
                 "> elytra reset - Resets the state of the process, but will try to keep flying to the same goal.",
                 "> elytra repack - Queues all of the chunks in render distance to be given to the native library.",
+                "> elytra file - Load a path from a file and attempt to follow it strictly.",
                 "> elytra supported - Tells you if baritone ships a native library that is compatible with your PC."
         );
     }
