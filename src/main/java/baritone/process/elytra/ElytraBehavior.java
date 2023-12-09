@@ -170,9 +170,10 @@ public final class ElytraBehavior implements Helper {
 
             if (overridePath == null) {
                 // Obstacles are more important than an incomplete path, handle those first.
-                this.pathfindAroundObstacles();
                 this.attemptNextSegment();
             }
+            this.pathfindAroundObstacles();
+
         }
 
         public CompletableFuture<Void> pathToDestination() {
@@ -349,12 +350,7 @@ public final class ElytraBehavior implements Helper {
                 if (!ElytraBehavior.this.clearView(this.path.getVec(i), this.path.getVec(i + 1), false)) {
                     // obstacle. where do we return to pathing?
                     // if the end of render distance is closer to goal, then that's fine, otherwise we'd be "digging our hole deeper" and making an already bad backtrack worse
-                    OptionalInt rejoinMainPathAt;
-                    if (this.path.get(rangeEndExcl - 1).distanceSq(ElytraBehavior.this.destination) < ctx.playerFeet().distanceSq(ElytraBehavior.this.destination)) {
-                        rejoinMainPathAt = OptionalInt.of(rangeEndExcl - 1); // rejoin after current render distance
-                    } else {
-                        rejoinMainPathAt = OptionalInt.empty(); // large backtrack detected. ignore render distance, rejoin later on
-                    }
+                    OptionalInt rejoinMainPathAt = OptionalInt.of(rangeEndExcl - 1);
 
                     final BetterBlockPos blockage = this.path.get(i);
                     final double distance = ctx.playerFeet().distanceTo(this.path.get(rejoinMainPathAt.orElse(path.size() - 1)));
